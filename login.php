@@ -4,7 +4,6 @@ session_start();
 
 // ถ้ามีการล็อกอินแล้ว (มี user_id อยู่ใน session)
 if (isset($_SESSION['user_id'])) {
-    // ส่งไปหน้าหลักแทน
     header("Location: index.php");
     exit();
 }
@@ -20,23 +19,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bindParam(':password', $password); // ถ้าใช้ password hash ต้องเปลี่ยนวิธีตรวจสอบ
     $stmt->execute();
 
-    if ($stmt->execute()) {
-        $success = true; // ✅ บันทึกสำเร็จ
-    } else {
-        $success = false;
-    }
-    
+    // ดึงข้อมูลผู้ใช้
+    $stmt->execute();
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
     if ($user) {
-        // ผู้ใช้มีอยู่จริง
+        // ล็อกอินสำเร็จ → เซ็ต session
         $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['fullname']; // หรือ username ถ้ามี
-        header("Location: index.php"); // ส่งไปหน้า index
-        exit();
+        $_SESSION['username'] = $user['fullname'];
+        $success = true; // ให้ SweetAlert โชว์
     } else {
+        $success = false; // ให้ SweetAlert ไม่ขึ้น
         $error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

@@ -4,21 +4,18 @@ session_start();
 
 // ถ้ามีการล็อกอินแล้ว (มี user_id อยู่ใน session)
 if (isset($_SESSION['user_id'])) {
-    // ส่งไปหน้าหลักแทน
     header("Location: index.php");
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // var_dump($_POST); // แสดงข้อมูลที่ส่งมาจากฟอร์ม
-    // exit;
     $fullname = $_POST['fullname'];
     $password = $_POST['password'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
 
-    $sql = "INSERT INTO users (fullname, password,  email, phone)
-            VALUES (:fullname, :password,  :email, :phone)";
+    $sql = "INSERT INTO users (fullname, password, email, phone)
+            VALUES (:fullname, :password, :email, :phone)";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':fullname', $fullname);
     $stmt->bindParam(':password', $password);
@@ -26,13 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bindParam(':phone', $phone);
 
     if ($stmt->execute()) {
-        $success = true; // ✅ บันทึกสำเร็จ
+        $success = true;
+        $user_id = $conn->lastInsertId();
+
+        // สมัครเสร็จให้ล็อกอินอัตโนมัติ
+        $_SESSION['user_id'] = $user_id;
+        $_SESSION['username'] = $fullname;
     } else {
         $success = false;
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -83,6 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const form = document.querySelector("form");
@@ -92,30 +95,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             form.addEventListener("submit", function(e) {
                 if (password.value !== confirmPassword.value) {
                     e.preventDefault(); // หยุดการส่งฟอร์ม
-                    setTimeout(() => {
-                        alert("รหัสผ่านไม่ตรงกัน");
-                    }, 1000); // หน่วง 1 วิ
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'รหัสผ่านไม่ตรงกัน',
+                        text: 'กรุณากรอกรหัสผ่านให้ตรงกัน'
+                    });
                 }
             });
-        });
-    </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <?php if (!empty($success) && $success === true): ?>
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
+            <?php if (!empty($success) && $success === true): ?>
                 Swal.fire({
                     title: "สมัครสำเร็จ!",
                     text: "บัญชีของคุณถูกสร้างเรียบร้อยแล้ว",
                     icon: "success",
                     confirmButtonText: "ตกลง"
                 }).then(() => {
-                    window.location.href = "index.php"; // ✅ เปลี่ยนไปหน้าอื่นได้
+                    window.location.href = "index.php";
                 });
-            });
-        </script>
-    <?php endif; ?>
+            <?php endif; ?>
+        });
+    </script>
+
 
 
 </body>
