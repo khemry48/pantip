@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="flex justify-center">
 
-    <div class="flex justify-center mt-[50px]" id="topic">
+    <div class="flex justify-center mt-[150px]" id="topic">
       <div class="bg-[#4c4973] p-2.5 w-[1045px] h-[570px] grid grid-cols-3 gap-2">
 
         <a href="javascript:void(0)" class="openTopic" data-type="question">
@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div>
         <div class="bg-[#193366] border border-[#33608a] p-4">
           <p class="text-gray-300 text-sm">1. ระบุคำถามของคุณ เช่น เว็บ Pantip.com ก่อตั้งขึ้นตั้งแต่เมื่อไหร่ ใครพอทราบบ้าง?</p>
-          <input type="text" class="text-[#e5c700] text-xl p-0 placeholder:text-[#627575] placeholder:font-bold placeholder:text-lg border border-[#5b79b4] bg-[#335087] w-full mb-2 mt-2" placeholder="หัวข้อคำถาม">
+          <input type="text" class="text-[#e5c700] text-xl p-0 placeholder:text-[#627575] placeholder:text-lg border border-[#5b79b4] bg-[#335087] w-full mb-2 mt-2" placeholder="หัวข้อคำถาม">
         </div>
         <div class="editor-container bg-[#193366] w-[1045px] h-[580px] shadow p-3.5 border border-[#33608a]">
           <div class="mb-3">
@@ -195,16 +195,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="editor-placeholder text-gray-400 p-4 "></div>
           </div> -->
         </div>
+        <div class="bg-[#193366] p-4 border border-[#33608a] w-ful h-[550px]">
+          <div class=" flex items-center space-x-20">
+            <p class="text-gray-300 text-sm">3. เลือกแท็กที่เกี่ยวข้องกับกระทู้ โดย Auto Tag จะคาดเดา Tag ที่เกี่ยวข้องกับเนื้อหาในกระทู้นี้ กรุณาเลือก Tag ที่เกี่ยวข้องกับเนื้อหากระทู้ของท่านค่ะ</p>
+            <a href="javascript:void(0)" class="text-[#e5c710] text-xs hover:text-[#d2b8ff] hover:underline pl-4">แท็กคืออะไร?</a>
+          </div>
+          <div class="mt-7">
+            <img src="https://ptcdn.info/images/auto_tag2.png" class="w-[170px] h-[80px]">
+          </div>
+          <div>
+
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-    <div class="flex justify-center ml-[1005px] mt-3">
+  <div class="mb-30">
+    <div class="flex justify-center ml-[1005px] mt-3 -mb-4">
       <a href="" id="cancel" class="text-sm text-[#e6ba82] hover:text-[#d2b8ff] hover:underline hidden">ยกเลิก</a>
     </div>
 
     <div class="flex justify-center mr-[188px] hidden flex items-center space-x-5" id="topic_save">
-      <a class="button letdo-butt p-0.5 pb-1 pt-1 border border-gray-500" href="javascript:void(0);">
+      <a class="button letdo-butt p-0.5 pb-1 pt-1 border border-gray-500" href="javascript:void(0);" id="sendBtn">
         <span class="p-1 px-2 text-sm bg-gradient-to-b from-[#608e30] to-[#466e2c] hover:from-[#608e30] hover:to-[#668646]">
           <em class="text-white">ส่งกระทู้</em>
         </span>
@@ -217,8 +230,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </p>
       </div>
     </div>
+  </div>
+
+  <form id="hiddenForm" action="index.php" method="POST" style="display:none;">
+    <textarea name="content" id="hiddenContent"></textarea>
+  </form>
+
+  <footer class="flex bottom-0 left-0 z-20 w-full p-4 bg-[#3c3963] border-t border-[#413e6b] shadow-sm md:flex md:items-center md:justify-between gap-x-4 md:p-6 dark:bg-gray-800 dark:border-gray-600">
+    <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">
+      <a href="" class="hover:underline text-[#8a86bf] hover:text-[#e5c710] dark:text-[#8a86bf]">BlogGang |
+      </a>
+      <a href="" class="hover:underline text-[#8a86bf] hover:text-[#e5c710] dark:text-[#8a86bf]">PantipMarket |
+      </a>
+      <a href="" class="hover:underline text-[#8a86bf] hover:text-[#e5c710] dark:text-[#8a86bf]">Pantown |
+      </a>
+      <a href="" class="hover:underline text-[#8a86bf] hover:text-[#e5c710] dark:text-[#8a86bf]">Maggang
+      </a>
+    </span>
+    <ul class="flex flex-wrap items-center mt-3 text-sm font-medium sm:mt-0">
+      <li>
+        <a href="#" class="hover:underline me-4 md:me-6 text-[#8a86bf] hover:text-[#e5c710] dark:text-[#8a86bf]">ติดต่อทีมงานพันทิป</a>
+      </li>
+      <li>
+        <a href="#" class="hover:underline me-4 md:me-6 text-[#8a86bf] hover:text-[#e5c710] dark:text-[#8a86bf]">ติดต่อลงโฆษณา</a>
+      </li>
+    </ul>
+  </footer>
 
 
+  <!-- โหลด SweetAlert2 (แจ้งเตือนสวยๆ) -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
     // ดักตอนกดหัวข้อ
@@ -259,12 +300,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </script>
 
   <script>
-    // JavaScript
-    ClassicEditor
-      .create(document.querySelector('#editor'))
+    let editorInstance;
+
+    ClassicEditor.create(document.querySelector('#editor'))
+      .then(editor => {
+        editorInstance = editor;
+      })
       .catch(error => {
         console.error(error);
       });
+
+    document.getElementById('sendBtn').addEventListener('click', function() {
+      // ดึงค่าจาก CKEditor
+      const content = editorInstance.getData();
+
+      // แจ้งเตือน SweetAlert
+      Swal.fire({
+        title: 'ยืนยันส่งกระทู้?',
+        text: "คุณต้องการส่งเนื้อหานี้หรือไม่",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#43A72A',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ส่งเลย!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // ใส่ค่าลงฟอร์มซ่อนแล้ว submit
+          document.getElementById('hiddenContent').value = content;
+          document.getElementById('hiddenForm').submit();
+        }
+      });
+    });
   </script>
 
 </body>

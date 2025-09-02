@@ -78,21 +78,30 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <P class="text-[#9895A8] text-sm">กระทู้ที่มีคนเปิดอ่านมากในขณะนี้ อัปเดตทุกนาที</P>
         </div>
         <div class="grid grid-cols-2">
-            <div class="flex p-4 gap-2 border border-gray-500">
-                <img src="https://f.ptcdn.info/381/088/000/mc4gl0rdi24o17X474L-o.png" class="w-20 h-20" alt="">
-                <div class="flex flex-col justify-between">
-                    <p class="text-[#FBC02D] text-lg">มัดรวมบริการลงโฆษณา Pantip.com แบนเนอร์ รีวิว กิจกรรม ตอบโจทย์ลูกค้า ในงบประมาณที่คุ้มค่า</p>
-                    <div class="flex justify-between">
-                        <p>สมาชิกหมายเลข 1091554 11ชั่วโมง</p>
-                        <div class="flex gap-2">
-                            <p><i class="fa-regular fa-comment"></i> 20</p>
-                            <p><i class="fa-regular fa-square-plus"></i> 0</p>
+            <?php if (!empty($content)) : ?>
+                <div class="flex p-4 gap-2 border border-gray-500">
+                    <img src="https://f.ptcdn.info/381/088/000/mc4gl0rdi24o17X474L-o.png" class="w-20 h-20" alt="">
+                    <div class="flex flex-col justify-between">
+                        <p class="text-[#FBC02D] text-lg">
+                            <?php
+                            // แสดงผล HTML จาก CKEditor ได้เลย
+                            echo $content;
+                            ?>
+                        </p>
+                        <div class="flex justify-between">
+                            <p>สมาชิกหมายเลข 1091554 11ชั่วโมง</p>
+                            <div class="flex gap-2">
+                                <p><i class="fa-regular fa-comment"></i> 20</p>
+                                <p><i class="fa-regular fa-square-plus"></i> 0</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            <?php else : ?>
+                <p>ยังไม่มีเนื้อหาส่งมา</p>
+            <?php endif; ?>
 
-            <div class="flex p-4 gap-2 border border-gray-500">
+            <!-- <div class="flex p-4 gap-2 border border-gray-500">
                 <div class="flex flex-col justify-between">
                     <p class="text-[#FBC02D] text-lg">หัวเจาะอุโมงค์ใต้ดิน หากเจาะไปเจอของแข็งๆขนาดใหญ่ใต้ดิน เช่นปืนใหญ่ทองเหลืองโบราณที่อยู่ใต้ดิน จะเกิดอะไรขึ้น</p>
                     <div class="flex justify-between">
@@ -134,7 +143,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 
