@@ -1,6 +1,6 @@
 <?php
-require 'connect.php';
 session_start();
+require 'connect.php';
 
 // ถ้ามีการล็อกอินแล้ว (มี user_id อยู่ใน session)
 if (isset($_SESSION['user_id'])) {

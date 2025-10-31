@@ -176,39 +176,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
 
-    <div id="newtopic" class="flex justify-center mt-[50px] hidden">
-      <div>
-        <div class="bg-[#193366] border border-[#33608a] p-4">
-          <p class="text-gray-300 text-sm">1. ระบุคำถามของคุณ เช่น เว็บ Pantip.com ก่อตั้งขึ้นตั้งแต่เมื่อไหร่ ใครพอทราบบ้าง?</p>
-          <input type="text" class="text-[#e5c700] text-xl p-0 placeholder:text-[#627575] placeholder:text-lg border border-[#5b79b4] bg-[#335087] w-full mb-2 mt-2" placeholder="หัวข้อคำถาม">
-        </div>
-        <div class="editor-container bg-[#193366] w-[1045px] h-[580px] shadow p-3.5 border border-[#33608a]">
-          <div class="mb-3">
-            <p class="text-gray-300 text-sm">2. เขียนรายละเอียดของคำถาม</p>
+    <form action="save.php" method="POST">
+
+      <div id="newtopic" class="flex justify-center mt-[50px] hidden">
+        <div>
+          <div class="bg-[#193366] border border-[#33608a] p-4">
+            <p class="text-gray-300 text-sm">1. ระบุคำถามของคุณ</p>
+            <input type="text" name="title" class="text-[#e5c700] text-xl p-0 placeholder:text-[#627575] placeholder:text-lg border border-[#5b79b4] bg-[#335087] w-full mb-2 mt-2" placeholder="หัวข้อคำถาม">
           </div>
-          <div>
+          <div class="editor-container bg-[#193366] w-[1045px] h-[580px] shadow p-3.5 border border-[#33608a]">
+            <p class="text-gray-300 text-sm mb-3">2. เขียนรายละเอียดของคำถาม</p>
             <textarea name="content" id="editor"></textarea>
           </div>
-          <!-- <div class="h-[120px]">
-            <div class="p-3 bg-[#335087] border border-[#5b79b4] focus:outline-none focus:ring focus:ring-none w-full h-full">
+          <div class="bg-[#193366] p-4 border border-[#33608a] w-ful h-[550px]">
+            <div class=" flex items-center space-x-20">
+              <p class="text-gray-300 text-sm">3. เลือกแท็กที่เกี่ยวข้องกับกระทู้ โดย Auto Tag จะคาดเดา Tag ที่เกี่ยวข้องกับเนื้อหาในกระทู้นี้ กรุณาเลือก Tag ที่เกี่ยวข้องกับเนื้อหากระทู้ของท่านค่ะ</p>
+              <a href="javascript:void(0)" class="text-[#e5c710] text-xs hover:text-[#d2b8ff] hover:underline pl-4">แท็กคืออะไร?</a>
             </div>
-            <div class="editor-placeholder text-gray-400 p-4 "></div>
-          </div> -->
-        </div>
-        <div class="bg-[#193366] p-4 border border-[#33608a] w-ful h-[550px]">
-          <div class=" flex items-center space-x-20">
-            <p class="text-gray-300 text-sm">3. เลือกแท็กที่เกี่ยวข้องกับกระทู้ โดย Auto Tag จะคาดเดา Tag ที่เกี่ยวข้องกับเนื้อหาในกระทู้นี้ กรุณาเลือก Tag ที่เกี่ยวข้องกับเนื้อหากระทู้ของท่านค่ะ</p>
-            <a href="javascript:void(0)" class="text-[#e5c710] text-xs hover:text-[#d2b8ff] hover:underline pl-4">แท็กคืออะไร?</a>
-          </div>
-          <div class="mt-7">
-            <img src="https://ptcdn.info/images/auto_tag2.png" class="w-[170px] h-[80px]">
-          </div>
-          <div>
-
+            <div class="mt-7">
+              <img src="https://ptcdn.info/images/auto_tag2.png" class="w-[170px] h-[80px]">
+            </div>
           </div>
         </div>
       </div>
-    </div>
   </div>
 
   <div class="mb-30">
@@ -231,6 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
   </div>
+  </form>
 
   <form id="hiddenForm" action="index.php" method="POST" style="display:none;">
     <textarea name="content" id="hiddenContent"></textarea>
@@ -260,6 +251,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <!-- โหลด SweetAlert2 (แจ้งเตือนสวยๆ) -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    document.getElementById("sendBtn").addEventListener("click", function() {
+      document.querySelector("form").submit();
+    });
+  </script>
+
 
   <script>
     // ดักตอนกดหัวข้อ

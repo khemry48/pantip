@@ -1,6 +1,6 @@
 <?php
-require 'connect.php';
 session_start();
+require 'connect.php';
 
 // ถ้ามีการล็อกอินแล้ว (มี user_id อยู่ใน session)
 if (isset($_SESSION['user_id'])) {
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form class="mx-auto bg-[#2d2a49] p-6 rounded-lg shadow-md h-full w-[600px]" method="POST">
             <div class="mb-5">
                 <label for="email" class="block mb-5 text-sm font-medium text-white dark:text-white">Your email</label>
-                <input type="email" name="email" class="bg-[#37355b] border border-[#6d6a8a] text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@flowbite.com" required />
+                <input type="email" name="email" class="bg-[#37355b] border border-[#6d6a8a] text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Your email" required />
             </div>
             <div class="mb-5">
                 <label for="fullname" class="block mb-2 text-sm font-medium text-white dark:text-white">Your fullname</label>

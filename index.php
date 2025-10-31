@@ -1,14 +1,30 @@
 <?php
-// เรียกไฟล์ connect.php มาใช้งาน
+session_start();
+
+// ✅ ป้องกัน cache หน้าเก่า
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+
+// ✅ ถ้ายังไม่ได้ล็อกอิน ให้กลับไปหน้า login.php
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// เรียกไฟล์ connect.php มาใช้งาน → ได้ตัวแปร $pdo
 require 'connect.php';
 
-// ดึงข้อมูลทั้งหมดจากตาราง users
+// ✅ ดึงข้อมูลโพสต์ทั้งหมด
+$stmt = $pdo->query("SELECT * FROM posts ORDER BY id DESC");
+$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ✅ ดึงข้อมูล Users
 $sql = "SELECT * FROM users";
-$stmt = $conn->prepare($sql);
+$stmt = $pdo->prepare($sql);
 $stmt->execute();
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,12 +33,13 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <title>pantip</title>
 </head>
 
 <body class="bg-[#3c3963]">
 
-    <nav class="bg-[#2d2a49] border-gray-200 dark:bg-gray-900">
+    <nav class="bg-[#2d2a49] border-b border-black dark:bg-gray-900 z-1000 fixed w-full top-0 left-0 shadow-lg">
         <div class="flex flex-wrap items-center justify-between">
             <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
                 <span class="self-center text-xl font-semibold whitespace-nowrap text-white ml-[100px]">pantip</span>
@@ -72,80 +89,65 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </nav>
-    <div class="mt-[160px] m-10 border-[0.1rem] border-gray-300 text-white">
+
+    <div class="w-full h-[200px] mt-0 fixed top-0 left-0 mt-[52px]"
+        title="น้อมรำลึกในพระมหากรุณาธิคุณตราบนิจนิรันดร์ สมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง"
+        style="background:url(https://ptcdn.info/doodle/2025/68fc1835caac0a3a4b2f8e34_xk96e10awt.png), url(https://ptcdn.info/doodle/2025/68fc1835caac0a3a4b2f8e34_mx8epq41h7.png);background-size:auto, cover;background-position:top, bottom;background-repeat:no-repeat, repeat">
+    </div>
+
+    <div class="bg-[#353156] mt-[250px] border-b border-black">
+        <div class="text-sm ml-[300px] text-gray-400 p-3">
+            หน้าแรกพันทิป
+        </div>
+    </div>
+
+    <div class="w-[1200px] mt-[20px] border-[0.1rem] border-[#7976a0] mx-auto">
         <div class="bg-[#1F1D33] p-3">
             <P class="text-[#FBC02D]">Pantip Realtime</P>
             <P class="text-[#9895A8] text-sm">กระทู้ที่มีคนเปิดอ่านมากในขณะนี้ อัปเดตทุกนาที</P>
         </div>
+    </div>
+
+
+    <div class="w-[1200px] mx-auto">
         <div class="grid grid-cols-2">
-            <?php if (!empty($content)) : ?>
-                <div class="flex p-4 gap-2 border border-gray-500">
+            <?php foreach ($posts as $post): ?>
+                <div class="flex p-4 gap-2 border border-gray-500 mb-2">
                     <img src="https://f.ptcdn.info/381/088/000/mc4gl0rdi24o17X474L-o.png" class="w-20 h-20" alt="">
-                    <div class="flex flex-col justify-between">
+                    <div class="flex flex-col justify-between w-full">
                         <p class="text-[#FBC02D] text-lg">
-                            <?php
-                            // แสดงผล HTML จาก CKEditor ได้เลย
-                            echo $content;
-                            ?>
+                            <?= htmlspecialchars($post['title']) ?>
                         </p>
-                        <div class="flex justify-between">
-                            <p>สมาชิกหมายเลข 1091554 11ชั่วโมง</p>
-                            <div class="flex gap-2">
-                                <p><i class="fa-regular fa-comment"></i> 20</p>
-                                <p><i class="fa-regular fa-square-plus"></i> 0</p>
+                        <div class="text-gray-200 text-sm">
+                            <?= $post['content'] ?>
+                        </div>
+                        <div class="flex justify-between items-center text-gray-400 text-xs mt-2">
+
+                            <!-- ซ้าย -->
+                            <div class="flex items-center gap-2">
+                                <p>สมาชิกหมายเลข <?= $username ?></p>
+                                <p>-</p>
+                                <p><?= $post['created_at'] ?></p>
                             </div>
+
+                            <!-- ขวา -->
+                            <div class="flex items-center gap-2">
+                                <p><i class="fa-regular fa-comment"></i> 20</p>
+                                <p><i class="fa-solid fa-square-plus"></i> 0</p>
+                            </div>
+
                         </div>
                     </div>
                 </div>
-            <?php else : ?>
-                <p>ยังไม่มีเนื้อหาส่งมา</p>
+            <?php endforeach; ?>
+
+            <?php if (!empty($_SESSION['error'])): ?>
+                <p class="text-red-400"><?php echo $_SESSION['error']; ?></p>
+                <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
-
-            <!-- <div class="flex p-4 gap-2 border border-gray-500">
-                <div class="flex flex-col justify-between">
-                    <p class="text-[#FBC02D] text-lg">หัวเจาะอุโมงค์ใต้ดิน หากเจาะไปเจอของแข็งๆขนาดใหญ่ใต้ดิน เช่นปืนใหญ่ทองเหลืองโบราณที่อยู่ใต้ดิน จะเกิดอะไรขึ้น</p>
-                    <div class="flex justify-between">
-                        <p>สมาชิกหมายเลข 1091554 11ชั่วโมง</p>
-
-                        <div class="flex gap-2">
-                            <p><i class="fa-regular fa-comment"></i> 20</p>
-                            <p><i class="fa-regular fa-square-plus"></i> 0</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex p-4 gap-2 border border-gray-500">
-                <img src="https://f.ptcdn.info/897/088/000/meavvkkvh6sXQ3pb5s6-o.jpg" class="w-20 h-20" alt="">
-                <div class="flex flex-col justify-between">
-                    <p class="text-[#FBC02D] text-lg">คุ้มค่าคุ้มราคา... สื่อนอกเผย “สิทธิประโยชน์” ที่ไทยจะได้รับชุดใหญ่ จากดีล “กริพเพน” กับสวีเดน</p>
-                    <div class="flex justify-between">
-                        <p>สมาชิกหมายเลข 1091554 11ชั่วโมง</p>
-
-                        <div class="flex gap-2">
-                            <p><i class="fa-regular fa-comment"></i> 20</p>
-                            <p><i class="fa-regular fa-square-plus"></i> 0</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex p-4 gap-2 border border-gray-500">
-                <img src="https://f.ptcdn.info/681/087/000/m9g3dsptiCCWQFxf445-o.png" class="w-20 h-20" alt="">
-                <div class="flex flex-col justify-between">
-                    <p class="text-[#FBC02D] text-lg">[รีวิว] ฮาลาบาลา ป่าจิตหลุด - งานจิตหลุดตามสไตล์เอกสิทธิ์ ที่ดันหลุดเรื่องบทจนมึนแทบจิตหลุด</p>
-                    <div class="flex justify-between">
-                        <p>สมาชิกหมายเลข 1091554 11ชั่วโมง</p>
-
-                        <div class="flex gap-2">
-                            <p><i class="fa-regular fa-comment"></i> 20</p>
-                            <p><i class="fa-regular fa-square-plus"></i> 0</p>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
