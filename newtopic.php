@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </li>
             <li>
               <a href="#" class="block">
-                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asste/winter.jpg" alt="">
+                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asset/winter.jpg" alt="">
               </a>
             </li>
           </ul>
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="javascript:void(0)" class="openTopic" data-type="question">
           <div class="bg-[#302e51] w-[329px] h-[267px] hover:bg-[#26223e]">
             <div class="flex justify-center items-center">
-              <img class="mt-12" src="./asste/pantip/icon-que.png" alt="">
+              <img class="mt-12" src="./asset/pantip/icon-que.png" alt="">
             </div>
             <div class="flex justify-center">
               <h3 class="text-[25px] font-bold text-[#ffe87a]">กระทู้คำถาม</h3>
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="javascript:void(0)" class="openTopic" data-type="chat">
           <div class="bg-[#302e51] w-[329px] h-[267px] hover:bg-[#26223e]">
             <div class="flex justify-center items-center">
-              <img class="mt-12" src="./asste/pantip/icon-smilechat.png" alt="">
+              <img class="mt-12" src="./asset/pantip/icon-smilechat.png" alt="">
             </div>
             <div class="flex justify-center">
               <h3 class="text-[25px] font-bold text-[#ffe87a]">กระทู้สนทนา</h3>
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="javascript:void(0)" class="openTopic" data-type="poll">
           <div class="bg-[#302e51] w-[329px] h-[267px] hover:bg-[#26223e]">
             <div class="flex justify-center items-center">
-              <img class="mt-12" src="./asste/pantip/icon-poll.png" alt="">
+              <img class="mt-12" src="./asset/pantip/icon-poll.png" alt="">
             </div>
             <div class="flex justify-center">
               <h3 class="text-[25px] font-bold text-[#ffe87a]">กระทู้โพล</h3>
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="javascript:void(0)" class="openTopic" data-type="review">
           <div class="bg-[#302e51] w-[329px] h-[267px] hover:bg-[#26223e]">
             <div class="flex justify-center items-center mb-2">
-              <img class="mt-10" src="./asste/pantip/icon-review.png" alt="">
+              <img class="mt-10" src="./asset/pantip/icon-review.png" alt="">
             </div>
             <div class="flex justify-center">
               <h3 class="text-[25px] font-bold text-[#ffe87a]">กระทู้รีวิว</h3>
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="javascript:void(0)" class="openTopic" data-type="news">
           <div class="bg-[#302e51] w-[329px] h-[267px] hover:bg-[#26223e]">
             <div class="flex justify-center items-center">
-              <img class="mt-12" src="./asste/pantip/icon-news.png" alt="">
+              <img class="mt-12" src="./asset/pantip/icon-news.png" alt="">
             </div>
             <div class="flex justify-center">
               <h3 class="text-[25px] font-bold text-[#ffe87a]">กระทู้ข่าว</h3>
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="javascript:void(0)" class="openTopic" data-type="shop">
           <div class="bg-[#302e51] w-[329px] h-[267px] hover:bg-[#26223e]">
             <div class="flex justify-center items-center">
-              <img class="mt-12" src="./asste/pantip/icon-shop.png" alt="">
+              <img class="mt-12" src="./asset/pantip/icon-shop.png" alt="">
             </div>
             <div class="flex justify-center">
               <h3 class="text-[25px] font-bold text-[#ffe87a]">กระทู้ขายของ</h3>
@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="items-center mr-[500px]">
         <p class="flex items-center space-x-2 text-sm text-gray-300">
           <span>ตั้งกระทู้โดย:</span>
-          <img src="./asste/winter.jpg" class="h-[25px] w-[25px] rounded-3xl">
+          <img src="./asset/winter.jpg" class="h-[25px] w-[25px] rounded-3xl">
           <span>สมาชิกหมายเลข 9001433</span>
         </p>
       </div>
@@ -223,9 +223,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
   </form>
 
-  <form id="hiddenForm" action="index.php" method="POST" style="display:none;">
+  <form id="hiddenForm" action="index.php" method="POST" enctype="multipart/form-data" style="display:none;">
     <textarea name="content" id="hiddenContent"></textarea>
-  </form>
+    <input type="file" name="image">
+</form>
 
   <footer class="flex bottom-0 left-0 z-20 w-full p-4 bg-[#3c3963] border-t border-[#413e6b] shadow-sm md:flex md:items-center md:justify-between gap-x-4 md:p-6 dark:bg-gray-800 dark:border-gray-600">
     <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">

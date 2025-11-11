@@ -1,40 +1,33 @@
 <?php
 session_start();
-require 'connect.php';
+require "connect.php"; // คุณใช้ชื่อ connect.php
 
-// ถ้ามีการล็อกอินแล้ว (มี user_id อยู่ใน session)
-if (isset($_SESSION['user_id'])) {
-    header("Location: index.php");
-    exit();
-}
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fullname = $_POST['fullname'];
-    $password = $_POST['password'];
+    $fullname = $_POST['fullname'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    // ค้นหาผู้ใช้
-    $sql = "SELECT * FROM users WHERE fullname = :fullname AND password = :password";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':fullname', $fullname);
-    $stmt->bindParam(':password', $password); // ถ้าใช้ password hash ต้องเปลี่ยนวิธีตรวจสอบ
-    $stmt->execute();
-
-    // ดึงข้อมูลผู้ใช้
-    $stmt->execute();
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $sql = "SELECT * FROM users WHERE fullname = ? AND password = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$fullname, $password]);
+    $user = $stmt->fetch();
 
     if ($user) {
-        // ล็อกอินสำเร็จ → เซ็ต session
         $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['fullname'];
-        $success = true; // ให้ SweetAlert โชว์
+        $_SESSION['role'] = $user['role'];
+
+        if ($user['role'] === 'admin') {
+            header("Location: admin.php");
+        } else {
+            header("Location: index.php");
+        }
+        exit();
     } else {
-        $success = false; // ให้ SweetAlert ไม่ขึ้น
-        $error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        echo "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
     }
 }
-?>
 
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -106,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-gray-300 mt-[30px]">ระบบจะจดจำข้อมูลการเข้าสู่ระบบของคุณแบบ "การลงชื่อเข้าใช้ถาวร"</div>
         </div>
         <div class="flex grid grid-cols-3 gap-2 mt-[50px] items-center">
-            <form method="POST">
+            <form action="login.php" method="POST">
                 <input type="text" placeholder="ชื่อผู้ใช้ / อีเมล" name="fullname" required
                     class="block w-full p-2 mt-4 mx-auto max-w-md text-md text-gray-400 border border-gray-500 rounded-sm bg-[#37355b] focus:ring-2 focus:ring-[#7459c8] focus:border-[#7459c8] dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-[#7459c8] dark:focus:border-[#7459c8]" />
                 <input type="password" placeholder="รหัสผ่าน" name="password" required

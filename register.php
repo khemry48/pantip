@@ -2,38 +2,52 @@
 session_start();
 require 'connect.php';
 
-// ถ้ามีการล็อกอินแล้ว (มี user_id อยู่ใน session)
+// ถ้าล็อกอินแล้วไม่ให้สมัครอีก
 if (isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fullname = $_POST['fullname'];
-    $password = $_POST['password'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
 
-    $sql = "INSERT INTO users (fullname, password, email, phone)
-            VALUES (:fullname, :password, :email, :phone)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':fullname', $fullname);
-    $stmt->bindParam(':password', $password);
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':phone', $phone);
+    $fullname = trim($_POST['fullname']);
+    $password = $_POST['password']; // ✅ เก็บรหัสผ่านแบบเห็นชัด
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone']);
 
-    if ($stmt->execute()) {
-        $success = true;
-        $user_id = $conn->lastInsertId();
+    // 1) บันทึกข้อมูล (ยังไม่สร้าง username)
+    $stmt = $pdo->prepare("INSERT INTO users (fullname, password, email, phone)
+                           VALUES (:fullname, :password, :email, :phone)");
+    $stmt->execute([
+        ':fullname' => $fullname,
+        ':password' => $password,
+        ':email' => $email,
+        ':phone' => $phone
+    ]);
 
-        // สมัครเสร็จให้ล็อกอินอัตโนมัติ
-        $_SESSION['user_id'] = $user_id;
-        $_SESSION['username'] = $fullname;
-    } else {
-        $success = false;
-    }
+    // 2) ดึง id ล่าสุด
+    $user_id = $pdo->lastInsertId();
+
+    // 3) สร้าง username จาก id
+    $username = "" . $user_id;
+
+    // 4) อัปเดต username กลับเข้า database
+    $update = $pdo->prepare("UPDATE users SET username = :username WHERE id = :id");
+    $update->execute([
+        ':username' => $username,
+        ':id' => $user_id
+    ]);
+
+    // 5) ให้ล็อกอินอัตโนมัติ
+    $_SESSION['user_id'] = $user_id;
+    $_SESSION['username'] = $username;
+
+    // 6) ย้ายไปหน้าแรก
+    header("Location: index.php");
+    exit();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
