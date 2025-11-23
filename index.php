@@ -1,20 +1,17 @@
 <?php
 session_start();
+// ... (โค้ดป้องกัน cache, redirect ถ้าไม่ได้ล็อกอิน) ...
 
-// ✅ ป้องกัน cache หน้าเก่า
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
-
-// ✅ ถ้ายังไม่ได้ล็อกอิน ให้กลับไปหน้า login.php
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-// เรียกไฟล์ connect.php มาใช้งาน → ได้ตัวแปร $pdo
 require 'connect.php';
 
-// ✅ ดึงข้อมูลโพสต์ทั้งหมด
+// 👇👇 เพิ่มโค้ดนี้เพื่อดึงข้อมูลผู้ใช้ที่ล็อกอินอยู่ 👇👇
+$loggedInUserId = $_SESSION['user_id'];
+$stmtUser = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+$stmtUser->execute([$loggedInUserId]);
+$currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
+$currentUsername = $currentUser['username'] ?? 'ผู้ใช้ไม่ทราบชื่อ'; // ป้องกัน error ถ้าหาไม่เจอ
+
+// ✅ ดึงข้อมูลโพสต์ทั้งหมด (โค้ดเดิมของคุณ)
 $stmt = $pdo->query("
   SELECT posts.*, users.username
   FROM posts
@@ -23,13 +20,9 @@ $stmt = $pdo->query("
 ");
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-// ✅ ดึงข้อมูล Users
-$sql = "SELECT * FROM users";
-$stmt = $pdo->prepare($sql);
-$stmt->execute();
-$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// ... (โค้ดดึงข้อมูล Users อื่นๆ ถ้ามี) ...
 ?>
+
 
 
 <!DOCTYPE html>
@@ -77,7 +70,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <a href="#" id="logoutBtn" class="block py-2 px-3 mt-1 text-white rounded-sm hover:bg-[#44416f]">logout</a>
                         </li>
                         <li>
-                            <a href="#" class="block">
+                            <a href="profile.php?user_id=<?= htmlspecialchars($loggedInUserId) ?>">
                                 <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asset/winter.jpg" alt="">
                             </a>
                         </li>
@@ -134,7 +127,9 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                             <!-- ซ้าย -->
                             <div class="flex items-center gap-2">
-                                <p>สมาชิกหมายเลข <?= $post['username'] ?> </p>
+                                <a href="profile.php?user_id=<?= htmlspecialchars($post['user_id']) ?>">
+                                    <p class="hover:text-white hover:underline">สมาชิกหมายเลข <?= $post['username'] ?> </p>
+                                </a>
                                 <p>-</p>
                                 <p><?= $post['created_at'] ?></p>
                             </div>
