@@ -1,5 +1,11 @@
 <?php
 session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
 require 'connect.php';
 
 // ตรวจสอบว่ามี user_id มั้ย
@@ -37,6 +43,30 @@ $stmt = $pdo->prepare("
 $stmt->execute([$user_id]);
 
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ✅ ดึงกระทู้ที่ผู้ใช้ *เคยไปแสดงความคิดเห็น*
+$stmt = $pdo->prepare("
+    SELECT DISTINCT posts.id, posts.title, posts.created_at
+    FROM comments
+    INNER JOIN posts ON comments.post_id = posts.id
+    WHERE comments.user_id = ?
+    ORDER BY posts.created_at DESC
+");
+$stmt->execute([$user_id]);
+$repliedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ✅ ดึงกระทู้ที่อ่านแล้ว
+$stmt = $pdo->prepare("
+    SELECT DISTINCT posts.id, posts.title, posts.created_at
+    FROM post_views
+    INNER JOIN posts ON post_views.post_id = posts.id
+    WHERE post_views.user_id = ?
+    ORDER BY post_views.viewed_at DESC
+");
+$stmt->execute([$user_id]);
+$viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -48,7 +78,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body class="bg-[#3c3963] text-gray-200">
+<body class="bg-[#3c3963] text-gray-200 w-full main-content pb-[100px]">
 
     <nav class="bg-[#2d2a49] border-b border-black dark:bg-gray-900 z-1000 w-full top-0 left-0 shadow-lg">
         <div class="flex flex-wrap items-center justify-between">
@@ -106,62 +136,198 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         style="background:url(https://ptcdn.info/images/cover/1140x240-default-member-profile.png), url(https://ptcdn.info/images/cover/background-default-member-profile.png);background-size:auto, cover;background-position:top, bottom;background-repeat:no-repeat, repeat">
     </div>
 
-    <div class="flex justify-center mt-2 ml-[30px]">
-        <div class="w-full mx-4 p-6 max-w-3xl">
-            <h1 class="text-2xl text-[#d2cde1] mb-2">
-                สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
-            </h1>
+    <div class="flex justify-center mt-4 ml-[30px]">
+        <div class="flex items-center w-full mx-4 p-6 max-w-3xl gap-5">
+            <img src="./asset/aespa.jpg" alt="" class="w-[120px] h-[120px] rounded-full border-4 border-[#2d2a49] -mt-4 mb-4">
 
-            <p class="text-gray-400 text-sm mb-4">
-                เข้าร่วมเมื่อ: <?= $user['date'] ?>
-            </p>
+            <div>
+                <h1 class="text-2xl text-[#d2cde1] mb-2">
+                    สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+                </h1>
 
-            <!-- <p class="text-gray-300 mb-6">ชื่อ: <?= htmlspecialchars($user['fullname']) ?></p>
-            <p class="text-gray-300 mb-6">อีเมล: <?= htmlspecialchars($user['email']) ?></p> -->
-
+                <p class="text-gray-400 text-sm mb-4">
+                    เข้าร่วมเมื่อ: <?= $user['date'] ?>
+                </p>
+            </div>
+            <div class="ml-[230px] bg-[#44416f] border border-[#565380] hover:bg-[#565380]">
+                <button class="p-1.5">แก้ไขโปรไฟล์</button>
+            </div>
         </div>
     </div>
 
-    <div class="bg-[#2d2a49] border-b border-black">
+    <div class="bg-[#2d2a49] border-b border-black" id="menu">
         <div class="gap-[10px] flex justify-center mr-[300px]">
-            <a href="#" class="p-3 text-[#979ab1] hover:text-white">
-                ภาพรวม
-            </a>
-            <a href="#" class="p-3 text-[#979ab1] hover:text-white">
-                กระทู้ที่ตั้ง
-            </a>
-            <a href="#" class="p-3 text-[#979ab1] hover:text-white">
-                กระทู้ที่ตอบ
-            </a>
-            <a href="#" class="p-3 text-[#979ab1] hover:text-white">
-                กระทู้ที่เคยอ่าน
-            </a>
+            <a class="item p-3 active text-[#979ab1] hover:text-white" data-target="overview">ภาพรวม</a>
+            <a class="item p-3 text-[#979ab1] hover:text-white" data-target="created">กระทู้ที่ตั้ง</a>
+            <a class="item p-3 text-[#979ab1] hover:text-white" data-target="replied">กระทู้ที่ตอบ</a>
+            <a class="item p-3 text-[#979ab1] hover:text-white" data-target="viewed">กระทู้ที่เคยอ่าน</a>
         </div>
     </div>
 
-    <div class="bg-[#1f1d33] w-[700px] mx-auto mt-5">
+    <div id="overview" class="content-section">
+        <!-- กระทู้ที่ตั้ง -->
+        <div class="bg-[#1f1d33] w-[700px] mx-auto mt-8">
+            <p class="p-3 border border-b-0 border-[#7976a0] text-[#fbc02d]">กระทู้ที่ตั้ง</p>
+            <div class="mx-auto w-[700px] bg-[#2d2a49] border border-[#7976a0]">
+                <?php if (empty($posts)): ?>
+                    <p class="text-[#9e9aa0] text-xl text-center mt-[100px]">ไม่พบกระทู้ที่ตั้ง</p>
+                <?php else: ?>
+                    <?php foreach ($posts as $post): ?>
+                        <div class="border-b border-gray-700 py-4">
+                            <a href="post.php?id=<?= $post['id'] ?>" class="text-[#dab27a] ml-4" target="_blank">
+                                <?= htmlspecialchars($post['title']) ?>
+                            </a>
+                            <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
+                                <a href="profile.php?user_id=<?= htmlspecialchars($post['user_id']) ?>" class="hover:underline">
+                                    สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+                                </a>
+                                <p>-</p>
+                                <p class="ml-1"><?= $post['created_at'] ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- กระทู้ที่ตอบ -->
+        <div class="bg-[#1f1d33] w-[700px] mx-auto mt-8">
+            <p class="p-3 border border-b-0 border-[#7976a0] text-[#fbc02d]">กระทู้ที่ตอบ</p>
+            <div class="mx-auto w-[700px] bg-[#2d2a49] border border-[#7976a0]">
+                <?php if (empty($repliedPosts)): ?>
+                    <p class="text-[#9e9aa0] text-xl text-center py-10">ยังไม่เคยแสดงความคิดเห็นในกระทู้ใด</p>
+                <?php else: ?>
+                    <?php foreach ($repliedPosts as $post): ?>
+                        <div class="border-b border-gray-700 py-4">
+                            <a href="post.php?id=<?= $post['id'] ?>" class="text-[#dab27a] ml-4" target="_blank">
+                                <?= htmlspecialchars($post['title']) ?>
+                            </a>
+                            <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
+                                <p><?= $post['created_at'] ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- กระทู้ที่เคยอ่าน -->
+        <div class="bg-[#1f1d33] w-[700px] mx-auto mt-8">
+            <p class="p-3 border border-b-0 border-[#7976a0] text-[#fbc02d]">กระทู้ที่เคยอ่าน</p>
+            <div class="mx-auto w-[700px] bg-[#2d2a49] border border-[#7976a0]">
+                <?php if (empty($viewedPosts)): ?>
+                    <p class="text-[#9e9aa0] text-xl text-center py-10">ยังไม่เคยอ่านกระทู้ใด</p>
+                <?php else: ?>
+                    <?php foreach ($viewedPosts as $post): ?>
+                        <div class="border-b border-gray-700 py-4">
+                            <a href="post.php?id=<?= $post['id'] ?>" class="text-[#dab27a] ml-4" target="_blank">
+                                <?= htmlspecialchars($post['title']) ?>
+                            </a>
+                            <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
+                                <p><?= $post['created_at'] ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-[#1f1d33] w-[700px] mx-auto mt-8 content-section hidden" id="created">
         <p class="p-3 border border-b-0 border-[#7976a0] text-[#fbc02d]">กระทู้ที่ตั้ง</p>
-    </div>
-    <div class="mx-auto w-[700px] h-[250px] bg-[#2d2a49] border border-[#7976a0]">
-        <?php if (empty($posts)): ?>
-            <p class="text-[#9e9aa0] text-xl text-center mt-[100px]">ไม่พบกระทู้ที่ตั้ง</p>
-        <?php else: ?>
-            <?php foreach ($posts as $post): ?>
-                <div class="border-b border-gray-700 py-4">
-                    <a href="post.php?id=<?= $post['id'] ?>" class="text-[#e5b26a] ml-4">
-                        <?= htmlspecialchars($post['title']) ?>
-                    </a>
-                    <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
-                        <a href="profile.php?user_id=<?= htmlspecialchars($post['user_id']) ?>" class="hover:underline">
-                            สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+        <div class="mx-auto w-[700px] bg-[#2d2a49] border border-[#7976a0]">
+            <?php if (empty($posts)): ?>
+                <p class="text-[#9e9aa0] text-xl text-center mt-[100px]">ไม่พบกระทู้ที่ตั้ง</p>
+            <?php else: ?>
+                <?php foreach ($posts as $post): ?>
+                    <div class="border-b border-gray-700 py-4">
+                        <a href="post.php?id=<?= $post['id'] ?>" class="text-[#dab27a] ml-4" target="_blank">
+                            <?= htmlspecialchars($post['title']) ?>
                         </a>
-                        <p>-</p>
-                        <p class="ml-1"><?= $post['created_at'] ?></p>
+                        <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
+                            <a href="profile.php?user_id=<?= htmlspecialchars($post['user_id']) ?>" class="hover:underline">
+                                สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+                            </a>
+                            <p>-</p>
+                            <p class="ml-1"><?= $post['created_at'] ?></p>
+                        </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
     </div>
+
+    <div class="bg-[#1f1d33] w-[700px] mx-auto mt-8 content-section hidden" id="replied">
+        <p class="p-3 border border-b-0 border-[#7976a0] text-[#fbc02d]">กระทู้ที่ตอบ</p>
+        <div class="mx-auto w-[700px] bg-[#2d2a49] border border-[#7976a0]">
+            <?php if (empty($repliedPosts)): ?>
+                <p class="text-[#9e9aa0] text-xl text-center py-10">ยังไม่เคยแสดงความคิดเห็นในกระทู้ใด</p>
+            <?php else: ?>
+                <?php foreach ($repliedPosts as $post): ?>
+                    <div class="border-b border-gray-700 py-4">
+                        <a href="post.php?id=<?= $post['id'] ?>" class="text-[#dab27a] ml-4" target="_blank">
+                            <?= htmlspecialchars($post['title']) ?>
+                        </a>
+                        <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
+                            <p><?= $post['created_at'] ?></p>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="bg-[#1f1d33] w-[700px] mx-auto mt-8 content-section hidden" id="viewed">
+        <p class="p-3 border border-b-0 border-[#7976a0] text-[#fbc02d]">กระทู้ที่เคยอ่าน</p>
+        <div class="mx-auto w-[700px] bg-[#2d2a49] border border-[#7976a0]">
+            <?php if (empty($viewedPosts)): ?>
+                <p class="text-[#9e9aa0] text-xl text-center py-10">ยังไม่เคยอ่านกระทู้ใด</p>
+            <?php else: ?>
+                <?php foreach ($viewedPosts as $post): ?>
+                    <div class="border-b border-gray-700 py-4">
+                        <a href="post.php?id=<?= $post['id'] ?>" class="text-[#dab27a] ml-4" target="_blank">
+                            <?= htmlspecialchars($post['title']) ?>
+                        </a>
+                        <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
+                            <p><?= $post['created_at'] ?></p>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <script>
+        const items = document.querySelectorAll('#menu .item');
+        const sections = document.querySelectorAll('.content-section');
+
+        // ตั้งค่าเริ่ม: ภาพรวม active
+        items[0].classList.remove('text-[#979ab1]');
+        items[0].classList.add('text-[#fbc02d]');
+
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+
+                // รีเซ็ตสีเมนูทั้งหมด
+                items.forEach(i => {
+                    i.classList.remove('text-[#fbc02d]');
+                    i.classList.add('text-[#979ab1]');
+                });
+
+                // กดอันไหน → active อันนั้น
+                item.classList.remove('text-[#979ab1]');
+                item.classList.add('text-[#fbc02d]');
+
+                // ซ่อนทุก content ก่อน
+                sections.forEach(sec => sec.classList.add('hidden'));
+
+                // แสดง content เป้าหมาย
+                const target = item.getAttribute('data-target');
+                document.getElementById(target).classList.remove('hidden');
+            });
+        });
+    </script>
+
 
 </body>
 

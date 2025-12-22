@@ -1,28 +1,46 @@
 <?php
 session_start();
-// ... (โค้ดป้องกัน cache, redirect ถ้าไม่ได้ล็อกอิน) ...
+
+// ❌ ถ้ายังไม่ได้ login → ห้ามเข้าหน้า index → เด้งไป login.php
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// ป้องกัน cache หน้าเก่า
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
 require 'connect.php';
 
-// 👇👇 เพิ่มโค้ดนี้เพื่อดึงข้อมูลผู้ใช้ที่ล็อกอินอยู่ 👇👇
+// ✅ ดึงข้อมูล user ที่ login อยู่
 $loggedInUserId = $_SESSION['user_id'];
+
 $stmtUser = $pdo->prepare("SELECT username FROM users WHERE id = ?");
 $stmtUser->execute([$loggedInUserId]);
 $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
-$currentUsername = $currentUser['username'] ?? 'ผู้ใช้ไม่ทราบชื่อ'; // ป้องกัน error ถ้าหาไม่เจอ
+$currentUsername = $currentUser['username'] ?? 'ไม่ทราบชื่อ';
 
-// ✅ ดึงข้อมูลโพสต์ทั้งหมด (โค้ดเดิมของคุณ)
+// ✅ ดึงโพสต์ทั้งหมด
 $stmt = $pdo->query("
-  SELECT posts.*, users.username
-  FROM posts
-  LEFT JOIN users ON posts.user_id = users.id
-  ORDER BY posts.created_at DESC
+    SELECT 
+        posts.*,
+        users.username,
+        COUNT(comments.id) AS comment_count
+    FROM posts
+    LEFT JOIN users ON posts.user_id = users.id
+    LEFT JOIN comments ON comments.post_id = posts.id
+    GROUP BY posts.id
+    ORDER BY posts.created_at DESC
 ");
+
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ... (โค้ดดึงข้อมูล Users อื่นๆ ถ้ามี) ...
+// ถ้าต้องการ users ทั้งหมด
+$stmt = $pdo->prepare("SELECT * FROM users");
+$stmt->execute();
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 
 <!DOCTYPE html>
@@ -135,9 +153,11 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
 
                             <!-- ขวา -->
-                            <div class="flex items-center gap-2">
-                                <p><i class="fa-regular fa-comment"></i> 20</p>
-                                <!-- <p><i class="fa-solid fa-square-plus"></i> 0</p> -->
+                            <div class="flex items-center gap-2 text-[#9d9ac0] text-sm">
+                                <p>
+                                    <i class="fa-regular fa-comment"></i>
+                                    <?= (int)$post['comment_count'] ?>
+                                </p>
                             </div>
 
                         </div>

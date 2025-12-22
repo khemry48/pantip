@@ -2,54 +2,65 @@
 session_start();
 require 'connect.php';
 
+/* ===== บังคับล็อกอิน ===== */
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$currentUserId = $_SESSION['user_id'];
+
+/* ===== ตรวจ post id ===== */
 if (!isset($_GET['id'])) {
     die("ไม่พบโพสต์ที่ต้องการ");
 }
+$post_id = (int)$_GET['id'];
 
-$post_id = $_GET['id'];
-
-// ---------------------------
-// ดึงข้อมูลโพสต์ + ผู้เขียน
-// ---------------------------
-$stmt = $pdo->prepare("
+/* ===== ดึงโพสต์ ===== */
+$stmtPost = $pdo->prepare("
     SELECT posts.*, users.username
     FROM posts
-    INNER JOIN users ON posts.user_id = users.id
+    JOIN users ON posts.user_id = users.id
     WHERE posts.id = ?
 ");
-$stmt->execute([$post_id]);
-$post = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmtPost->execute([$post_id]);
+$post = $stmtPost->fetch(PDO::FETCH_ASSOC);
 
-// ถ้าไม่เจอโพสต์
 if (!$post) {
     die("โพสต์นี้ไม่มีอยู่ในระบบ");
 }
 
-// ---------------------------
-// ดึงความคิดเห็นทั้งหมดของโพสต์นี้
-// ---------------------------
-$stmt2 = $pdo->prepare("
-    SELECT comments.*, users.username
-    FROM comments
-    INNER JOIN users ON comments.user_id = users.id
-    WHERE comments.post_id = ?
-    ORDER BY comments.created_at ASC
+/* ===== ดึง comment หลัก (parent_id IS NULL) ===== */
+$stmtComments = $pdo->prepare("
+    SELECT c.*, u.username
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.post_id = ? AND c.parent_id IS NULL
+    ORDER BY c.created_at ASC
 ");
-$stmt2->execute([$post_id]);
-$comments = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+$stmtComments->execute([$post_id]);
+$comments = $stmtComments->fetchAll(PDO::FETCH_ASSOC);
+if (!$comments) $comments = [];
 
-// ป้องกัน error ถ้าไม่มีความคิดเห็นเลย
-if (!$comments) {
-    $comments = [];
-}
+/* ===== นับจำนวน comment ===== */
 $commentCount = count($comments);
 
-$currentUserId = $_SESSION['user_id'];
+/* ===== เตรียม stmt สำหรับ reply ===== */
+$stmtReply = $pdo->prepare("
+    SELECT c.*, u.username
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.parent_id = ?
+    ORDER BY c.created_at ASC
+");
 
-$stmtUser = $pdo->prepare("SELECT username FROM users WHERE id = ?");
-$stmtUser->execute([$currentUserId]);
+/* ===== user ที่ login ===== */
+$stmtUser = $pdo->prepare("SELECT id, username FROM users WHERE id = ?");
+$stmtUser->execute([$_SESSION['user_id']]);
 $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
+$currentUsername = $currentUser['username'] ?? 'ไม่ทราบชื่อ';
 ?>
+
 
 <!DOCTYPE html>
 <html>
@@ -94,7 +105,7 @@ $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
                             <a href="#" id="logoutBtn" class="block py-2 px-3 mt-1 text-white rounded-sm hover:bg-[#44416f]">logout</a>
                         </li>
                         <li>
-                            <a href="#" class="block">
+                            <a href="profile.php?user_id=<?= htmlspecialchars($currentUserId) ?>" class="block">
                                 <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asset/winter.jpg" alt="">
                             </a>
                         </li>
@@ -149,26 +160,85 @@ $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
     </div>
 
     <div class="max-w-[940px] mx-auto h-full mt-10 mb-10">
-        <?php $count = 1; ?>
-        <?php foreach ($comments as $comment): ?>
-            <div class="bg-[#2d2a49] px-11 py-5 mb-4 rounded border border-[#8e8ba7] break-words">
-                <p class="text-xs text-[#736d6b] hover:text-[#d3c69a] mb-1">
-                    ความคิดเห็นที่ <?= $count ?>
-                </p>
-                <p class="text-[#c0c0c0]">
-                    <?= strip_tags($comment['content'], '<p><br><b><strong><i><u><span>') ?>
-                </p>
-                <a href="profile.php?user_id=<?= $comment['user_id'] ?>"
-                    class="text-[#909db2] hover:text-white hover:underline text-sm">
-                    สมาชิกหมายเลข <?= htmlspecialchars($comment['username']) ?>
-                </a>
-                <p class="text-[#909db2] text-sm">
-                    <?= $comment['created_at'] ?>
-                </p>
-            </div>
-            <?php $count++; ?>
-        <?php endforeach; ?>
+
+        <?php if (empty($comments)): ?>
+            <p class="text-center text-[#a8a4b8] text-sm">ยังไม่มีความคิดเห็น</p>
+        <?php else: ?>
+
+            <?php $count = 1; ?>
+            <?php foreach ($comments as $comment): ?>
+
+                <div class="bg-[#2d2a49] px-11 py-5 mb-4 rounded border border-[#8e8ba7] break-words">
+
+                    <p class="text-xs text-[#736d6b] mb-1">
+                        ความคิดเห็นที่ <?= $count ?>
+                    </p>
+
+                    <p class="text-[#c0c0c0]">
+                        <?= strip_tags($comment['content'], '<p><br><b><strong><i><u><span>') ?>
+                    </p>
+
+                    <a href="profile.php?user_id=<?= $comment['user_id'] ?>"
+                        class="text-[#909db2] hover:text-white hover:underline text-sm">
+                        สมาชิกหมายเลข <?= htmlspecialchars($comment['username']) ?>
+                    </a>
+
+                    <p class="text-[#909db2] text-sm">
+                        <?= $comment['created_at'] ?>
+                    </p>
+
+                    <!-- ปุ่มตอบกลับ -->
+                    <button
+                        onclick="replyToComment(<?= $comment['id'] ?>)"
+                        class="mt-2 text-xs text-blue-300 hover:underline">
+                        ตอบกลับ
+                    </button>
+
+
+                    <!-- ===== แสดง reply ===== -->
+                    <?php
+                    $stmtReply->execute([$comment['id']]);
+                    $replies = $stmtReply->fetchAll(PDO::FETCH_ASSOC);
+                    ?>
+
+                    <?php foreach ($replies as $reply): ?>
+                        <div class="mt-3 ml-10 bg-[#322f52] p-3 rounded border border-[#6e6b8f]">
+                            <p class="text-xs text-[#9a9a9a]">↳ ตอบกลับ</p>
+
+                            <p class="text-[#dcdcdc]">
+                                <?= strip_tags($reply['content'], '<p><br><b><strong><i><u><span>') ?>
+                            </p>
+
+                            <a href="profile.php?user_id=<?= $reply['user_id'] ?>"
+                                class="text-[#909db2] hover:underline text-sm">
+                                สมาชิกหมายเลข <?= htmlspecialchars($reply['username']) ?>
+                            </a>
+
+                            <p class="text-[#808080] text-sm">
+                                <?= $reply['created_at'] ?>
+                            </p>
+                        </div>
+                    <?php endforeach; ?>
+
+                </div>
+
+                <?php $count++; ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
     </div>
+
+    <form id="replyForm" action="comment_save.php" method="POST" class="hidden">
+        <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+        <input type="hidden" name="parent_id" id="replyParentId">
+
+        <textarea name="content" class="w-full border p-2 mt-2"></textarea>
+
+        <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded mt-1">
+            ส่งตอบกลับ
+        </button>
+    </form>
+
 
 
     <div class="flex items-center my-4">
@@ -177,27 +247,32 @@ $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
         <div class="flex-grow border-t border-purple-300/40"></div>
     </div>
 
-    <form action="comment_save.php" method="POST">
+    <form action="comment_save.php" method="POST" id="mainCommentForm">
         <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+        <input type="hidden" name="parent_id" id="parent_id" value="">
 
-        <div class="flex justify-center">
+        <div class="flex justify-center" id="comment-editor">
             <div class="editor-container bg-[#093a43] w-[1045px] h-[380px] shadow p-3.5 border border-[#33608a] text-black">
 
                 <textarea name="content" id="editor" class="w-full h-[250px] p-2"></textarea>
 
-                <p class="text-[12px] text-[#a09dcc] mt-2">* พิมพ์ข้อความได้ไม่เกิน 10,000 ตัวอักษร</p>
+                <p class="text-[12px] text-[#a09dcc] mt-2">
+                    * พิมพ์ข้อความได้ไม่เกิน 10,000 ตัวอักษร
+                </p>
 
                 <div class="flex mr-[220px] items-center space-x-5 mt-2">
-                    <button type="submit" class="button letdo-butt p-0.5 pb-1 pt-1 border border-gray-500">
-                        <span class="p-1 px-2 text-sm bg-gradient-to-b from-[#608e30] to-[#466e2c] hover:from-[#608e30] hover:to-[#668646]">
+                    <button type="submit"
+                        class="button letdo-butt p-0.5 pb-1 pt-1 border border-gray-500">
+                        <span class="p-1 px-2 text-sm bg-gradient-to-b from-[#608e30] to-[#466e2c]">
                             <em class="text-white">ส่งข้อความ</em>
                         </span>
                     </button>
+
                     <div class="flex items-center mr-[500px]">
-                        <a href="profile.php?user_id=<?= $currentUserId ?>">
+                        <a href="profile.php?user_id=<?= $_SESSION['user_id'] ?>">
                             <p class="flex items-center space-x-2 text-sm text-[#90a8ae] hover:text-white hover:underline">
                                 <img src="./asset/winter.jpg" class="h-[25px] w-[25px] rounded-3xl">
-                                <span>สมาชิกหมายเลข <?= htmlspecialchars($currentUser['username']) ?></span>
+                                <span>สมาชิกหมายเลข <?= htmlspecialchars($currentUsername) ?></span>
                             </p>
                         </a>
                     </div>
@@ -206,7 +281,21 @@ $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
         </div>
     </form>
 
+    <script>
+        function replyToComment(commentId) {
+            // ใส่ parent_id ให้ฟอร์มหลัก
+            document.getElementById('parent_id').value = commentId;
 
+            // เลื่อนลงไปที่ช่องพิมพ์
+            document.getElementById('comment-editor')
+                .scrollIntoView({
+                    behavior: 'smooth'
+                });
+
+            // focus textarea
+            document.getElementById('editor').focus();
+        }
+    </script>
 
     <script>
         let editorInstance;

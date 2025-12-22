@@ -1,4 +1,12 @@
 <?php
+
+session_start();
+// ... (โค้ดป้องกัน cache, redirect ถ้าไม่ได้ล็อกอิน) ...
+if (!isset($_SESSION['user_id'])) {
+  header("Location: login.php");
+  exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $content = $_POST['content']; // ข้อมูล HTML จาก editor
   // บันทึกลงฐานข้อมูลได้เลย
@@ -226,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <form id="hiddenForm" action="index.php" method="POST" enctype="multipart/form-data" style="display:none;">
     <textarea name="content" id="hiddenContent"></textarea>
     <input type="file" name="image">
-</form>
+  </form>
 
   <footer class="flex bottom-0 left-0 z-20 w-full p-4 bg-[#3c3963] border-t border-[#413e6b] shadow-sm md:flex md:items-center md:justify-between gap-x-4 md:p-6 dark:bg-gray-800 dark:border-gray-600">
     <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">

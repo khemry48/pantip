@@ -1,5 +1,11 @@
 <?php
 session_start();
+
+if (isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
+
 require "connect.php"; // คุณใช้ชื่อ connect.php
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {

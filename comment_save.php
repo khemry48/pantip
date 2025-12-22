@@ -2,31 +2,29 @@
 session_start();
 require 'connect.php';
 
-// ต้องล็อกอินก่อน
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
+    die("กรุณาเข้าสู่ระบบ");
 }
 
-$post_id = $_POST['post_id'];
-$content = trim($_POST['content']);
-$user_id = $_SESSION['user_id'];
+$post_id   = $_POST['post_id'] ?? null;
+$content   = trim($_POST['content'] ?? '');
+$parent_id = $_POST['parent_id'] ?? null;
 
-// ตรวจสอบข้อมูล
 if ($content === '') {
-    $_SESSION['error'] = "กรุณากรอกความคิดเห็นก่อนส่ง";
-    header("Location: post.php?id=" . $post_id);
-    exit();
+    die("กรุณากรอกข้อความ");
 }
 
-// บันทึกลงฐานข้อมูล
 $stmt = $pdo->prepare("
-    INSERT INTO comments (post_id, user_id, content)
-    VALUES (?, ?, ?)
+    INSERT INTO comments (post_id, user_id, content, parent_id, created_at)
+    VALUES (?, ?, ?, ?, NOW())
 ");
-$stmt->execute([$post_id, $user_id, $content]);
+$stmt->execute([
+    $post_id,
+    $_SESSION['user_id'],
+    $content,
+    $parent_id ?: null
+]);
 
-// กลับไปหน้ากระทู้
 header("Location: post.php?id=" . $post_id);
 exit();
 ?>
