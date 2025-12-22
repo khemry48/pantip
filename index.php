@@ -26,6 +26,7 @@ $stmt = $pdo->query("
     SELECT 
         posts.*,
         users.username,
+        users.avatar,
         COUNT(comments.id) AS comment_count
     FROM posts
     LEFT JOIN users ON posts.user_id = users.id
@@ -35,6 +36,21 @@ $stmt = $pdo->query("
 ");
 
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$stmtUser = $pdo->prepare("
+    SELECT username, avatar 
+    FROM users 
+    WHERE id = ?
+");
+$stmtUser->execute([$_SESSION['user_id']]);
+$currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+$avatarPath = './asset/default-avatar.png';
+
+if (!empty($currentUser['avatar'])) {
+    $avatarPath = 'uploads/' . $currentUser['avatar'];
+}
+
 
 // ถ้าต้องการ users ทั้งหมด
 $stmt = $pdo->prepare("SELECT * FROM users");
@@ -89,7 +105,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </li>
                         <li>
                             <a href="profile.php?user_id=<?= htmlspecialchars($loggedInUserId) ?>">
-                                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asset/winter.jpg" alt="">
+                                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="<?= htmlspecialchars($avatarPath) ?>?v=<?= time() ?>" alt="avatar">
                             </a>
                         </li>
                     </ul>

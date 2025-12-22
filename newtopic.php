@@ -9,7 +9,44 @@ if (!isset($_SESSION['user_id'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $content = $_POST['content']; // ข้อมูล HTML จาก editor
-  // บันทึกลงฐานข้อมูลได้เลย
+
+  // ✅ ดึงโพสต์ทั้งหมด
+  $stmt = $pdo->query("
+    SELECT 
+        posts.*,
+        users.username,
+        users.avatar,
+        COUNT(comments.id) AS comment_count
+    FROM posts
+    LEFT JOIN users ON posts.user_id = users.id
+    LEFT JOIN comments ON comments.post_id = posts.id
+    GROUP BY posts.id
+    ORDER BY posts.created_at DESC
+");
+
+  $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+  $stmtUser = $pdo->prepare("
+    SELECT username, avatar 
+    FROM users 
+    WHERE id = ?
+");
+  $stmtUser->execute([$_SESSION['user_id']]);
+  $currentUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+  $avatarPath = './asset/default-avatar.png';
+
+  if (!empty($currentUser['avatar'])) {
+    $avatarPath = 'uploads/' . $currentUser['avatar'];
+  }
+
+
+  // ถ้าต้องการ users ทั้งหมด
+  $stmt = $pdo->prepare("SELECT * FROM users");
+  $stmt->execute();
+  $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
   // ตัวอย่าง PDO
   require 'connect.php';
   $stmt = $conn->prepare("INSERT INTO posts(content) VALUES(:content)");
@@ -65,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <a href="#" id="logoutBtn" class="block py-2 px-3 mt-1 text-white rounded-sm hover:bg-[#44416f]">logout</a>
             </li>
             <li>
-              <a href="#" class="block">
-                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asset/winter.jpg" alt="">
+              <a href="profile.php?user_id=<?= htmlspecialchars($loggedInUserId) ?>" class="block">
+                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="<?= htmlspecialchars($avatarPath) ?>?v=<?= time() ?>" alt="avatar">
               </a>
             </li>
           </ul>

@@ -25,6 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ':phone' => $phone
     ]);
 
+    if (empty($_POST['username'])) {
+        die("กรุณากรอกชื่อผู้ใช้");
+    }
+
     // 2) ดึง id ล่าสุด
     $user_id = $pdo->lastInsertId();
 

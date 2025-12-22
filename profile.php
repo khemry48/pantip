@@ -19,7 +19,7 @@ $user_id = $_GET['user_id'];
    1) ดึงข้อมูลผู้ใช้
 -------------------------- */
 $stmt = $pdo->prepare("
-    SELECT id, username, fullname, email, phone, date
+    SELECT id, username, fullname, email, phone, date, avatar
     FROM users
     WHERE id = ?
 ");
@@ -29,6 +29,14 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$user) {
     die("ไม่พบข้อมูลผู้ใช้");
 }
+
+$avatarPath = './asset/default-avatar.png';
+
+if (!empty($user['avatar']) && file_exists(__DIR__ . '/uploads/' . $user['avatar'])) {
+    $avatarPath = 'uploads/' . $user['avatar'];
+}
+
+$isOwner = ($_SESSION['user_id'] == $user['id']);
 
 /* -------------------------
    2) ดึงโพสต์ทั้งหมดของ user นี้ (JOIN)
@@ -66,6 +74,9 @@ $stmt = $pdo->prepare("
 $stmt->execute([$user_id]);
 $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// echo '<pre>';
+// print_r($user);
+// echo '</pre>';
 
 ?>
 
@@ -74,7 +85,7 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
     <meta charset="UTF-8">
-    <title>สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?></title>
+    <title>สมาชิกหมายเลข <?= htmlspecialchars($user['username'] ?: $user['id']) ?></title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
@@ -82,7 +93,7 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <nav class="bg-[#2d2a49] border-b border-black dark:bg-gray-900 z-1000 w-full top-0 left-0 shadow-lg">
         <div class="flex flex-wrap items-center justify-between">
-            <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
+            <a href="index.php" class="flex items-center space-x-3 rtl:space-x-reverse">
                 <span class="self-center text-xl font-semibold whitespace-nowrap text-white ml-[100px]">pantip</span>
             </a>
             <div class="flex md:order-2 mr-6">
@@ -113,7 +124,7 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </li>
                         <li>
                             <a href="#" class="block">
-                                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="./asset/winter.jpg" alt="">
+                                <img class="w-[35px] h-[35px] rounded-3xl mt-1" src="<?= htmlspecialchars($avatarPath) ?>?v=<?= time() ?>" alt="">
                             </a>
                         </li>
                     </ul>
@@ -138,20 +149,30 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="flex justify-center mt-4 ml-[30px]">
         <div class="flex items-center w-full mx-4 p-6 max-w-3xl gap-5">
-            <img src="./asset/aespa.jpg" alt="" class="w-[120px] h-[120px] rounded-full border-4 border-[#2d2a49] -mt-4 mb-4">
-
+            <img
+                src="<?= htmlspecialchars($avatarPath) ?>?v=<?= time() ?>" alt="avatar"
+                class="w-[120px] h-[120px] rounded-full border-4 border-[#2d2a49] -mt-4 mb-4 object-cover">
             <div>
                 <h1 class="text-2xl text-[#d2cde1] mb-2">
-                    สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+                    สมาชิกหมายเลข <?= htmlspecialchars($user['username'] ?: $user['id']) ?>
                 </h1>
+
+                <!-- <h1 class="text-xl text-[#d2cde1] mb-2">
+                    <?= htmlspecialchars($user['fullname'] ?: $user['id']) ?>
+                </h1> -->
 
                 <p class="text-gray-400 text-sm mb-4">
                     เข้าร่วมเมื่อ: <?= $user['date'] ?>
                 </p>
             </div>
-            <div class="ml-[230px] bg-[#44416f] border border-[#565380] hover:bg-[#565380]">
-                <button class="p-1.5">แก้ไขโปรไฟล์</button>
-            </div>
+
+            <?php if ($isOwner): ?>
+                <div class="ml-[230px] bg-[#44416f] border border-[#565380] hover:bg-[#565380]">
+                    <button onclick="openEditProfile()" class="p-1.5">
+                        แก้ไขโปรไฟล์
+                    </button>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -179,7 +200,7 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </a>
                             <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
                                 <a href="profile.php?user_id=<?= htmlspecialchars($post['user_id']) ?>" class="hover:underline">
-                                    สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+                                    สมาชิกหมายเลข <?= htmlspecialchars($user['username'] ?: $user['id']) ?>
                                 </a>
                                 <p>-</p>
                                 <p class="ml-1"><?= $post['created_at'] ?></p>
@@ -246,7 +267,7 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                         <div class="flex ml-4 mt-1 text-[#9d9ac0] text-[12px] gap-1">
                             <a href="profile.php?user_id=<?= htmlspecialchars($post['user_id']) ?>" class="hover:underline">
-                                สมาชิกหมายเลข <?= htmlspecialchars($user['username']) ?>
+                                สมาชิกหมายเลข <?= htmlspecialchars($user['username'] ?: $user['id']) ?>
                             </a>
                             <p>-</p>
                             <p class="ml-1"><?= $post['created_at'] ?></p>
@@ -296,6 +317,51 @@ $viewedPosts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Modal แก้ไขโปรไฟล์ -->
+    <div id="editProfileModal" class="fixed inset-0 bg-black/60 hidden justify-center items-center z-50">
+        <div class="bg-[#2d2a49] p-6 w-[400px] rounded shadow-lg relative">
+
+            <h3 class="text-lg text-yellow-400 mb-4">แก้ไขโปรไฟล์</h3>
+
+            <form action="profile_update.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+
+                <label>ชื่อที่แสดง</label>
+                <input type="text" name="fullname"
+                    value="<?= htmlspecialchars($user['fullname']) ?>"
+                    class="w-full p-2 text-white rounded bg-[#3c3963] mb-2">
+
+                <label class="mt-2 block">รูปโปรไฟล์</label>
+                <input type="file" name="avatar" class="w-full bg-[#3c3963] rounded p-2 mb-3">
+
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeEditProfile()"
+                        class="px-3 py-1 bg-gray-500 rounded">
+                        ยกเลิก
+                    </button>
+                    <button type="submit"
+                        class="px-3 py-1 bg-green-600 text-white rounded">
+                        บันทึก
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+
+    <script>
+        function openEditProfile() {
+            document.getElementById('editProfileModal').classList.remove('hidden');
+            document.getElementById('editProfileModal').classList.add('flex');
+        }
+
+        function closeEditProfile() {
+            document.getElementById('editProfileModal').classList.add('hidden');
+            document.getElementById('editProfileModal').classList.remove('flex');
+        }
+    </script>
 
     <script>
         const items = document.querySelectorAll('#menu .item');
